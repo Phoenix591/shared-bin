@@ -1,0 +1,19 @@
+#!/bin/bash
+#stop on error
+set -e
+# drop old libraries from list in case of changes (stop printing after matched line)
+#sed -i.backup  '/# LIBRARIES/q' /root/initrd/initramfs_list
+#gather new library list
+# assemble new microcode update
+#lddtree -l $(which fsck) $(which fsck.ext4) $(which lvm) $(which dmsetup) |grep .so | sort | uniq | xargs -i echo file {} {} 755 0 0 >> /root/initrd/initramfs_list
+cd /usr/src/build
+usr/gen_init_cpio /root/initrd/musl-list | gzip -9c >/tmp/real-initrd.gz
+# microcode
+mkdir -p /tmp/initrd/kernel/x86/microcode
+cat /lib/firmware/intel-ucode/* >/tmp/initrd/kernel/x86/microcode/GenuineIntel.bin
+cd /tmp/initrd
+find . | cpio -o -H newc >/tmp/ucode.cpio
+cat /tmp/ucode.cpio /tmp/real-initrd.gz >/boot/initrd
+rm -Rf /tmp/real-initrd.gz /tmp/ucode.cpio
+#cat /lib/firmware/intel-ucode/* > /tmp/GenuineIntel.bin
+

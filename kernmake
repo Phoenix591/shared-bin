@@ -1,0 +1,93 @@
+#!/bin/bash
+if [ "${UID}" != 1000 ]; then
+echo "Switching to user"
+exec sudo -u kyle  $0 $@;
+fi
+cd ~kyle/pi/linux
+#export CHOST=armv7a-unknown-linux-gnueabihf
+export CHOST=aarch64-unknown-linux-gnu
+#export CC=armv7a-unknown-linux-gnu-clang
+#export CXX=armv7a-unknown-linux-gnu-clang++
+export ARCH=arm64
+export LLVM=1
+export LLVM_IAS="${LLVM}"
+export TMPFS=${TMPFS:-0}
+export TDIR="/home/kyle/pi"
+export CFLAGS="-march=armv8-a+crc+simd -mcpu=cortex-a72 -mfpu=neon-fp-armv8"
+#export CFLAGS="-march=armv7-a -mtune=cortex-a72 -mfpu=neon-fp-armv8"
+#CFLAGS="-mcpu=cortex-a72 -mfpu=neon-fp-armv8"
+if [ "${LLVM}" == 0 ]; then
+	CFLAGS="${CFLAGS} -march=armv8-a+crc"
+else
+	LLVM_PREFIX="${CHOST}-"
+	CFLAGS="${CFLAGS}"
+fi
+	echo "${CFLAGS}"
+	sleep 0.5
+
+#export CFLAGS="-mtune=cortex-a72"
+# -mfloat-abi=hard"
+#export CFLAGS="${KBUILD_CFLAGS}"
+unset CCACHE_PREFIX
+
+#nodistcc
+#export PATH=$(echo "${PATH}" | sed -e s#/usr/lib/distcc/bin:##)
+
+#distcc
+DPATH="/usr/lib/distcc/bin"
+if ping -c2 192.168.1.2 &>/dev/null; then
+	export PATH="/usr/local/bin:${DPATH}:/usr/bin:${PATH}"
+else
+	export PATH="${PATH/${DPATH}/}"
+fi
+set -e
+if [ "${LLVM}" = 0 ]; then
+unset LLVM LLVM_IAS
+fi
+function int_cleanup() {
+	echo "Cleaning up!"
+	rsync -ahp /home/kyle/pi/linux-build "${TDIR}"/
+	rm -Rf "${TDIR}"
+	exit 1
+}
+do_tmpfs() {
+	if [[ "${TMPFS}" == "1" ]]; then
+		export	TDIR=$(mktemp -d)
+		trap int_cleanup SIGINT
+	else
+		export TDIR=/home/kyle/pi/
+	fi
+}
+sync_tmpfs() {
+	if [[ "${TMPFS}" == "1" ]]; then
+	if [ "${COMPLETE}" != 1 ]; then
+		#setup initial tmpfs
+		do_tmpfs
+		echo "Copying source into ram (or not)..."
+		rsync -ahpz --exclude=.git /home/kyle/pi/linux/ "${TDIR}/linux"
+		cd "${TDIR}/linux"
+		rsync -ahp /home/kyle/pi/linux-build "${TDIR}"/
+	else
+		rsync -ahp --del "${TDIR}/linux-build" /home/kyle/pi/
+		cd /home/kyle/pi/linux
+		if [[ "${TDIR}" == *"/tmp"* ]]; then
+			rm /home/kyle/pi/linux-build/source
+			ln -sf /home/kyle/pi/linux /home/kyle/pi/linux-build/source
+			cd /home/kyle/pi/linux-build
+			../linux/scripts/mkmakefile /home/kyle/pi/linux
+			rm -R "${TDIR}" >/dev/null &
+		trap - SIGINT # Done with tmpfs, no need to clean it up on control+c
+		fi
+	fi
+	fi
+}
+if [[ "${0}" == *"make"* ]]; then
+make CFLAGS="${CFLAGS}" KCFLAGS="${CFLAGS}" O=../linux-build oldconfig
+sync_tmpfs
+make "V=${V}" CFLAGS="${CFLAGS}" KCFLAGS="${CFLAGS}" O="${TDIR}/linux-build" -j32 -l3 $@
+export COMPLETE=1
+sync_tmpfs
+else
+make KERNEL=kernel7l O=../linux-build oldconfig
+make O=../linux-build menuconfig
+fi

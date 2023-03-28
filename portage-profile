@@ -1,0 +1,4 @@
+#!/usr/bin/env python
+import portage
+for p in portage.settings.profiles:
+        print("%s" % p)

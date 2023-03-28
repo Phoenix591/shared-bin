@@ -1,0 +1,24 @@
+#!/bin/bash
+if [ "$UID" -ne 0 ]; then
+	exec sudo $0
+fi
+set -e
+BUILD_DIR=/home/kyle/pi/linux-build
+if ! mountpoint -q /boot; then
+	mount /boot
+fi
+KERNEL="kernel8.img"
+if [ -f "${BUILD_DIR}/arch/arm64/boot/Image" ]; then
+mv -f /boot/${KERNEL}.1 /boot/${KERNEL}.2 || true
+mv /boot/${KERNEL} /boot/${KERNEL}.1
+cp -v "${BUILD_DIR}/arch/arm64/boot/Image" /boot/${KERNEL}
+#rsync --del ${BUILD_DIR}/arch/arm64/boot/dts/overlays/*.dtbo /boot/overlays
+ rsync --del -vr ${BUILD_DIR}/arch/arm64/boot/dts/overlays/ --include='*.dtbo' --include='*.dtb' --exclude='*' /boot/overlays/
+cp -vR ${BUILD_DIR}/arch/arm64/boot/dts/broadcom/bcm2711-rpi-4-b.dtb /boot/
+#umount /boot
+cd ${BUILD_DIR}
+make O=${BUILD_DIR} modules_install
+else
+echo "Image doesn't exist, build kernel first"
+exit 2
+fi

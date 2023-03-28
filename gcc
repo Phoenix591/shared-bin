@@ -1,0 +1,3 @@
+#!/bin/bash
+source /usr/local/bin/get-chost.sh
+exec ${CHOST}-gcc ${@}

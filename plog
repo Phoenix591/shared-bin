@@ -1,0 +1,34 @@
+#!/bin/bash
+#This script takes a package or package/category and opens
+#Portage's git log of that package
+PORTDIR=$(portageq get_repo_path / gentoo)
+if [ ! -d "${PORTDIR}"/.git ]; then
+	echo "Error, Portage tree isn't a git repo"
+	exit -2
+fi
+ARG="${@}"
+lookup() {
+#Intententionally unquoted so that the wildcard is expanded
+case $(ls -d "${PORTDIR}"/${@} 2>/dev/null |wc -l) in
+
+	1) cd "${PORTDIR}"; git log ${@}; exit $?
+	;;
+	[2-6]) echo "Exists in multiple categories"; eix -e "${ARG}"; exit 1
+	;;
+	0) echo "Not found"; exit 2
+	;;
+	*) echo "Script broke (or pkg exists in more than 6 categories)"
+		 exit -1
+	;;
+esac
+
+}
+if [[ "${@}" == */* ]];
+then
+lookup "${ARG}"
+elif [ -n "${ARG}" ]; then
+lookup "*/${ARG}"
+else
+	echo -e "Usage:\t ${0} package"
+	echo -e "\t ${0} category/package"
+fi

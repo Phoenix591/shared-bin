@@ -1,0 +1,2 @@
+#!/bin/bash
+find /var/log/portage -name '*.log' -mtime +10 -print -delete

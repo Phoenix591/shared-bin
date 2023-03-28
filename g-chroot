@@ -1,0 +1,34 @@
+#!/bin/bash
+
+ROOT="$1"
+MOUNTS="dev proc sys run"
+if [ -z "${PORTAGE}" ]; then
+	MOUNTS+=" var/db/repos/ var/tmp/portage"
+	if [ -d "${ROOT}/usr/portage" ]; then
+		MOUNTS+=" usr/portage"
+	fi
+fi
+if [ -z "${DISTFILES}" ]; then
+	MOUNTS+=" var/cache/distfiles"
+fi
+
+Cmount() {
+	for mnt in ${MOUNTS}; do
+		echo ${mnt}
+		mount --rbind "/${mnt}" "${ROOT}/${mnt}" -o rslave
+	done
+}
+Cumount() {
+if [ ! -e "${ROOT}/.unmounting" ]; then
+		touch "${ROOT}/.umounting"
+		for mnt in ${MOUNTS}; do
+			umount -l "${ROOT}/${mnt}"
+		done
+		rm "${ROOT}/.unmounting"
+fi
+}
+trap Cumount INT TERM HUP
+Cmount
+sleep 1
+chroot "${ROOT}" /bin/bash
+Cumount

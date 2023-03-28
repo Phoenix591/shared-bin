@@ -1,0 +1,8 @@
+#!/bin/bash
+source /usr/local/bin/get-chost.sh
+
+if [[ $@ == *"-target"* ]]; then
+	exec ${CHOST}-clang $@
+else
+	exec ${CHOST}-clang -target ${CHOST}  "${@}"
+fi

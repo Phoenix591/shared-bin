@@ -1,0 +1,2 @@
+#!/bin/bash
+cmake -DRELEASE_ID=$(GIT_DIR=/home/kyle/mumble/.git git rev-parse --short HEAD) -Dbundled-opus=off -Dbundled-speex=off -Dzeroconf=off -Doptimize=on -Dserver=off -DCMAKE_INSTALL_PREFIX=/home/kyle/mumble-install ..

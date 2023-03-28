@@ -1,0 +1,2 @@
+#!/bin/bash
+dig example.com | grep --quiet SERVFAIl && systemctl restart named

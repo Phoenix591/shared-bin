@@ -1,0 +1,23 @@
+#!/bin/bash
+ALIST="127.12.12.12 127.0.0.5 127.12.12.13"
+
+function run() {
+for addr in ${ALIST}; do
+	ip addr ${act} ${addr}/8 dev lo
+done
+}
+
+case $1 in
+	start )
+		act=add
+		run
+		;;
+	stop )
+		act=del
+		run
+		;;
+	* )
+		echo "Usage: $0 start/stop to add or remove"
+		exit -1
+		;;
+esac

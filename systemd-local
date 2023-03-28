@@ -1,0 +1,20 @@
+#!/bin/bash
+if [ "$1" == "start" ]; then
+	if compgen -G /etc/local.d/*.start >/dev/null; then
+		for x in /etc/local.d/*.start
+		do
+			$x || ( echo "${x} failed" ; exit -1 )
+		done
+	fi
+elif [ "$1" == "stop" ]; then
+	if compgen -G /etc/local.d/*.stop >/dev/null; then
+		for x in  /etc/local.d/*.stop
+		do
+			$x
+		done
+	fi
+else
+	echo "incorrect usage"; exit -2
+fi
+echo "Completed Sucessfully"
+exit 0

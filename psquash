@@ -1,0 +1,81 @@
+#!/bin/bash
+#dont double compress git compressed stuff
+export GIT='-action uncompressed@subpathname(*/.git/objects/pack)'
+#lz4
+export COMPMETHOD="-comp xz -all-root"
+export PORTDIR="/usr/portage"
+#export EIXDIR="/var/cache/eix/"
+export EIXDIR="/var/cache/distfiles"
+if [ "$UID" -ne 0 ]; then
+	exec sudo "${0}" "${@}"
+fi
+set -eu
+if [ -e "${PORTDIR}.mount/portage.new.sfs" ]; then
+	rm "${PORTDIR}.mount/portage.new.sfs"
+fi
+cd /usr/portage
+git pull
+cd
+repack() {
+	systemctl stop smbd >/dev/null
+	echo "waiting for /usr/portage to be not in use"
+	while  lsof /usr/portage && ! read -t 5 -p 'IN use: press enter to bypass'; do sleep 1s; done #wait for it to not be in use!
+	mksquashfs "${PORTDIR}" "${PORTDIR}.mount/portage.new.sfs" ${GIT} ${COMPMETHOD}
+	#rc-service -s nfs stop
+
+	echo ${PORTDIR}
+	if mountpoint "${PORTDIR}"; then
+		umount -l "${PORTDIR}"
+	fi
+	echo "umounted"
+	if mountpoint "${PORTDIR}.mount/ro"; then
+		umount "${PORTDIR}.mount/ro"
+	fi
+	echo "unmounted secondary"
+	#echo "new squash created, press any key"
+	#read -n 1
+	#if [ -e "${PORTDIR}.mount/changes/" ]; then
+	#	rm -R "${PORTDIR}.mount/changes/"
+	#	install -o root -g root -d "${PORTDIR}.mount/changes"
+	#fi
+	if mountpoint "${PORTDIR}.mount/tmpfs/" ; then
+		umount "${PORTDIR}.mount/tmpfs/"
+		mount "${PORTDIR}.mount/tmpfs/"
+		mkdir -p "${PORTDIR}.mount/tmpfs/changes"
+		mkdir -p "${PORTDIR}.mount/tmpfs/workdir"
+	fi
+	echo "recreated changes"
+	#if [ -e "${PORTDIR}.mount/workdir/work/" ]; then
+	#        rm -R "${PORTDIR}.mount/workdir/work/"
+	#        install -o root -g root -d "${PORTDIR}.mount/workdir/work"
+	#fi
+	#echo "changes cleared, press any key"
+	#read -n 1
+	if [ -e "${PORTDIR}.mount/portage.sfs" ]; then
+		rm "${PORTDIR}.mount/portage.sfs"
+	fi
+	echo "old squashfs removed"
+
+	mv  "${PORTDIR}.mount/portage.new.sfs" "${PORTDIR}.mount/portage.sfs"
+	if [ -e "${PORTDIR}/metadata" ] ; then
+		rm -R "${PORTDIR}"
+		install -o portage -g portage -d "${PORTDIR}"
+	fi
+	mount "${PORTDIR}.mount/ro"
+	mount "${PORTDIR}"
+	echo "Remounted"
+	systemctl start smbd
+}
+if [ $(du -s "${PORTDIR}".mount/tmpfs | awk '{print $1}') -ge 20000 ]; then
+	repack
+fi
+emerge --sync
+if [ -e "${EIXDIR}/portage.eix" ]; then
+	mv -f "${EIXDIR}/portage.eix" "${EIXDIR}/previous.eix"
+#	emerge --sync
+	eix-update
+	eix-diff "${EIXDIR}/previous.eix" "${EIXDIR}/portage.eix"
+fi
+
+#rc-service -S nfs start
+#cp "${EIXDIR}"/portage.eix "${PORTDIR}"
