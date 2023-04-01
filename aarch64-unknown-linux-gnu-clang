@@ -1,5 +1,5 @@
 #!/bin/sh
-TARGET=$(sed -e s/-clang.*// -e 's#./##' <<<"$0")
+TARGET=$(sed -e s/-clang.*// -e 's#./##' -e 's#.*/##' <<<"$0")
 
 if [[ $0 != *"clang++"* ]]; then
 	exec clang -target ${TARGET} $@
