@@ -1,6 +1,11 @@
 #!/bin/bash
 source /usr/local/bin/get-chost.sh
-if [[ $@ == *"-target"* ]]; then
+OPATH="${PATH}"
+PATH="$(sed -e s#/usr/local/bin:## <<< ${PATH})"
+if ! type ${CHOST}-clang++ >/dev/null 2>&1; then
+PATH="${OPATH}"
+fi
+if grep -q -- -target <<< "$0" ;then
 	exec ${CHOST}-clang++ $@
 else
 	exec ${CHOST}-clang++ -target ${CHOST}  "${@}"
