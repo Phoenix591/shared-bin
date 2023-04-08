@@ -23,41 +23,44 @@ def dropq(var):
 
 
 def main():
-    zone_name = myconfig['zone_name']
-    cf = CloudFlare.CloudFlare(profile=myconfig['zone_name'])
-    zone_id = myconfig['zone_id']
     ip4=getip("-4")
     ip6=getip("-6")
     doip6=False
     ip4=dropq(ip4)
-    if doip6==True:
-        ip6=dropq(ip6)
-        dns_records = [
-            {'name':'dns.'+myconfig['zone_name'], 'type':'AAAA', 'content':ip6},
-            {'name':'dns.'+myconfig['zone_name'], 'type':'A', 'content':ip4},
-            {'name':myconfig['zone_name'], 'type':'A', 'content':ip4},
-            {'name':myconfig['zone_name'], 'type':'AAAA', 'content':ip6},
-        ]
-    else:
-        dns_records = [
-            {'name':'dns.'+myconfig['zone_name'], 'type':'A', 'content':ip4},
-            {'name':myconfig['zone_name'], 'type':'A', 'content':ip4},
-        ]
-    def getrecord(name, ipv):
-        record=cf.zones.dns_records.get(zone_id,params={'name':name, 'type':ipv})
-        return record
+    for section in config.sections():
+        myconfig = config[section]
+        zone_name = myconfig['zone_name']
+        zone_id = myconfig['zone_id']
+        cf = CloudFlare.CloudFlare(profile=myconfig['zone_name'])
 
-    def getrecordid(name, ipv):
-        record=getrecord(name, ipv)
-        record=record[0]
-        return(record['id'])
-    for dns_record in dns_records:
-   #     print(zone_id)
-        #print(ip4)
-        print(dns_record)
-        record_id=getrecordid(dns_record['name'], dns_record['type'])
-        print(record_id)
-        r = cf.zones.dns_records.put(zone_id, record_id,  data=dns_record)
+        if doip6==True:
+            ip6=dropq(ip6)
+            dns_records = [
+                {'name':'dns.'+myconfig['zone_name'], 'type':'AAAA', 'content':ip6},
+                {'name':'dns.'+myconfig['zone_name'], 'type':'A', 'content':ip4},
+                {'name':myconfig['zone_name'], 'type':'A', 'content':ip4},
+                {'name':myconfig['zone_name'], 'type':'AAAA', 'content':ip6},
+            ]
+        else:
+            dns_records = [
+                {'name':'dns.'+myconfig['zone_name'], 'type':'A', 'content':ip4},
+                {'name':myconfig['zone_name'], 'type':'A', 'content':ip4},
+            ]
+        def getrecord(name, ipv):
+            record=cf.zones.dns_records.get(zone_id,params={'name':name, 'type':ipv})
+            return record
+
+        def getrecordid(name, ipv):
+            record=getrecord(name, ipv)
+            record=record[0]
+            return(record['id'])
+        for dns_record in dns_records:
+            print(zone_id)
+            #print(ip4)
+            print(dns_record)
+            record_id=getrecordid(dns_record['name'], dns_record['type'])
+            print(record_id)
+            r = cf.zones.dns_records.put(zone_id, record_id,  data=dns_record)
     exit(0)
 
 if __name__ == '__main__':
