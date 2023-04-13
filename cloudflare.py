@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 
-import sys
 import CloudFlare
 import subprocess
 import configparser
-import os
+from os import path
 
 
 config = configparser.ConfigParser()
-configfile = os.path.expanduser("~/.cloudflare/my-script.ini")
+configfile = path.expanduser("~/.cloudflare/my-script.ini")
 config.read(configfile)
 
 # config example
@@ -41,40 +40,40 @@ def main():
     for section in config.sections():
         myconfig = config[section]
         zone_name = myconfig["zone_name"]
-        cf = CloudFlare.CloudFlare(profile=myconfig["zone_name"])
+        cf = CloudFlare.CloudFlare(profile=zone_name)
 
         try:
             zone_id = myconfig["zone_id"]
         except KeyError:
             print("zone_id not specified, querying the api")
-            params = {"name": myconfig["zone_name"]}
+            params = {"name": zone_name}
             zone = cf.zones.get(params=params)
             zone_id = zone[0]["id"]
         doip6 = myconfig.getboolean("ipv6")
 
         dns_records = [
-            {"name": myconfig["zone_name"], "type": "A", "content": ip4},
+            {"name": zone_name, "type": "A", "content": ip4},
         ]
 
-        if doip6 == True:
+        if doip6 is True:
             ip6 = dropq(ip6)
             v6_records = [
-                {"name": myconfig["zone_name"], "type": "AAAA", "content": ip6}
+                {"name": zone_name, "type": "AAAA", "content": ip6}
             ]
             dns_records.extend(v6_records)
         subdomains = myconfig["subdomains"].split()
         for subdomain in subdomains:
             subd_record = [
                 {
-                    "name": subdomain + "." + myconfig["zone_name"],
+                    "name": subdomain + "." + zone_name,
                     "type": "A",
                     "content": ip4,
                 }
             ]
-            if doip6 == True:
+            if doip6 is True:
                 subd_record = subd_record + [
                     {
-                        "name": subdomain + "." + myconfig["zone_name"],
+                        "name": subdomain + "." + zone_name,
                         "type": "AAAA",
                         "content": ip6,
                     }
@@ -101,6 +100,7 @@ def main():
             record_id = getrecordid(dns_record["name"], dns_record["type"])
             print("record id: " + record_id)
             r = cf.zones.dns_records.put(zone_id, record_id, data=dns_record)
+            print(r)
     exit(0)
 
 
