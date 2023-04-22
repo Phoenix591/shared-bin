@@ -24,19 +24,11 @@ def getip(type):
         capture_output=True,
         universal_newlines=True,
     )
-    return ip.stdout
-
-
-def dropq(var):
-    var = var.replace('"', "")
-    var = var.rstrip("\n")
-    return var
+    return ip.stdout.strip('"\n')
 
 
 def main():
     ip4 = getip("-4")
-    ip6 = getip("-6")
-    ip4 = dropq(ip4)
     for section in config.sections():
         myconfig = config[section]
         zone_name = myconfig["zone_name"]
@@ -56,10 +48,8 @@ def main():
         ]
 
         if doip6 is True:
-            ip6 = dropq(ip6)
-            v6_records = [
-                {"name": zone_name, "type": "AAAA", "content": ip6}
-            ]
+            ip6 = getip("-6")
+            v6_records = [{"name": zone_name, "type": "AAAA", "content": ip6}]
             dns_records.extend(v6_records)
         subdomains = myconfig["subdomains"].split()
         for subdomain in subdomains:
