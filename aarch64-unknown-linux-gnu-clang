@@ -2,7 +2,7 @@
 TARGET=$(sed -e s/-clang.*// -e 's#./##' -e 's#.*/##' <<<"$0")
 
 if [[ $0 != *"clang++"* ]]; then
-	exec clang -target ${TARGET} $@
+	clang -target ${TARGET} $@
 else
-	exec clang++ -target ${TARGET} $@
+	clang++ -target ${TARGET} $@
 fi
