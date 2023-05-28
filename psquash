@@ -13,9 +13,9 @@ set -eu
 if [ -e "${PORTDIR}.mount/portage.new.sfs" ]; then
 	rm "${PORTDIR}.mount/portage.new.sfs"
 fi
-cd /usr/portage
+pushd /usr/portage
 git pull
-cd
+popd
 repack() {
 	systemctl stop smbd >/dev/null
 	echo "waiting for /usr/portage to be not in use"
