@@ -60,6 +60,9 @@ def main():
                     "content": ip4,
                 }
             ]
+            if subdomain in myconfig["prox-domains"]:
+                subd_record[0]["proxied"] = True
+                print(subd_record)
             if doip6 is True:
                 subd_record = subd_record + [
                     {
