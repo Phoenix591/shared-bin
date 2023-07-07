@@ -1,0 +1,18 @@
+#!/bin/bash
+set -eu
+TRUFFLEHOG="/home/kyle/trufflehog"
+REPO="/var/db/repos/phoenix591/dev-vcs/trufflehog"
+VERSION="${1}"
+LATEST="$(NAMEVERSION="<name>-<version>" eix -*0xI --format "<installedversions:NAMEVERSION>\n" trufflehog)"
+cd ${TRUFFLEHOG}
+git fetch upstream v${VERSION}
+git merge --no-edit FETCH_HEAD
+git tag ${VERSION}
+git push origin main ${VERSION}
+echo "Waiting 90 seconds for vendor tarball to be created"
+sleep 90
+cp ${REPO}/${LATEST}.ebuild ${REPO}/trufflehog-${VERSION}.ebuild
+copybump ${REPO}/trufflehog-${VERSION}.ebuild
+ebuild ${REPO}/trufflehog-${VERSION}.ebuild manifest
+pushd ${REPO}
+git add ${REPO}/trufflehog-${VERSION}.ebuild Manifest

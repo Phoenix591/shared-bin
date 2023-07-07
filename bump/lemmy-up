@@ -1,0 +1,29 @@
+#!/bin/bash
+set -eu
+LEMMY_GIT="/srv/general/lemmy"
+VERSION="$1"
+PV="$(sed s/-rc./_rc/ <<<${VERSION})"
+TAR_DIR="${LEMMY_GIT}-${VERSION}"
+TRANS="lemmy-translations-${PV}.tar.xz"
+SUBMODULES="crates/utils/translations"
+REPO="/var/db/repos/phoenix591/www-servers/lemmy-server"
+EBUILD="${REPO}/lemmy-server-${PV}.ebuild"
+for m in ${SUBMODULES}; do
+	set +u
+	F_SUBMODULES="${F_SUBMODULES} $(basename ${TAR_DIR})/${m}"
+done
+set -u
+pushd "${LEMMY_GIT}"
+git fetch origin "${VERSION}"
+git checkout --recurse-submodules "${VERSION}"
+#USING LICENSES FROM cargo ebuild run since pycargoebuild barfs on this one
+pycargoebuild -L -i "${REPO}/lemmy-server-9999.ebuild" -o "${EBUILD}"
+cd ..
+mv "${LEMMY_GIT}" "${TAR_DIR}"
+tar --exclude-vcs -caf "${TRANS}" ${F_SUBMODULES} # Intentionally unquoted
+GDRIVE="$(gdrive files upload --print-only-id ${TRANS})"
+rm "${TRANS}" # ensure grabbing it via gdrive works like it does for everyone
+gdrive permissions share "${GDRIVE}"
+mv "${TAR_DIR}" "${LEMMY_GIT}"
+sed -i "s#id=.* -> ${TRANS}#id=${GDRIVE} -> ${TRANS}#" "${EBUILD}"
+ebuild "${EBUILD}" manifest
