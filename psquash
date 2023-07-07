@@ -6,6 +6,7 @@ export COMPMETHOD="-comp xz -all-root"
 export PORTDIR="/usr/portage"
 #export EIXDIR="/var/cache/eix/"
 export EIXDIR="/var/cache/distfiles"
+EMAIL="${1}"
 if [ "$UID" -ne 0 ]; then
 	exec sudo "${0}" "${@}"
 fi
@@ -79,3 +80,7 @@ fi
 
 #rc-service -S nfs start
 #cp "${EIXDIR}"/portage.eix "${PORTDIR}"
+set +u
+if [ ! -z "${EMAIL} ]; then
+	/usr/local/bin/postsync.sh "${EMAIL}"
+fi
