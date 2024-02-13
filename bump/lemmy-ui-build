@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e
+UI_DIR=/srv/general/lemmy-ui
+pushd "${UI_DIR}"
+yarn install --pure-lockfile
+echo "export const VERSION = '$(git describe --tag)';" > "src/shared/version.ts"
+yarn build:prod

@@ -4,9 +4,10 @@ TRUFFLEHOG="/home/kyle/trufflehog"
 REPO="/var/db/repos/phoenix591/dev-vcs/trufflehog"
 VERSION="${1}"
 LATEST="$(NAMEVERSION="<name>-<version>" eix -*0xI --format "<installedversions:NAMEVERSION>\n" trufflehog)"
+sudo -v # get root now so the call at the end doesn't prompt
 cd ${TRUFFLEHOG}
 git fetch upstream v${VERSION}
-git merge --no-edit FETCH_HEAD
+git merge -X ours --no-edit FETCH_HEAD
 git tag ${VERSION}
 git push origin main ${VERSION}
 echo "Waiting 90 seconds for vendor tarball to be created"
@@ -16,3 +17,5 @@ copybump ${REPO}/trufflehog-${VERSION}.ebuild
 ebuild ${REPO}/trufflehog-${VERSION}.ebuild manifest
 pushd ${REPO}
 git add ${REPO}/trufflehog-${VERSION}.ebuild Manifest
+pkgdev commit
+( sudo emerge -1 =dev-vcs/trufflehog-${VERSION} && git push ) || echo "Build failed!"

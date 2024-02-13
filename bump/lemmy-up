@@ -15,7 +15,7 @@ done
 set -u
 pushd "${LEMMY_GIT}"
 git fetch origin "${VERSION}"
-git checkout --recurse-submodules "${VERSION}"
+git checkout --recurse-submodules FETCH_HEAD
 #USING LICENSES FROM cargo ebuild run since pycargoebuild barfs on this one
 pycargoebuild -L -i "${REPO}/lemmy-server-9999.ebuild" -o "${EBUILD}"
 cd ..
@@ -25,5 +25,5 @@ GDRIVE="$(gdrive files upload --print-only-id ${TRANS})"
 rm "${TRANS}" # ensure grabbing it via gdrive works like it does for everyone
 gdrive permissions share "${GDRIVE}"
 mv "${TAR_DIR}" "${LEMMY_GIT}"
-sed -i "s#id=.* -> ${TRANS}#id=${GDRIVE} -> ${TRANS}#" "${EBUILD}"
+sed -i "s#id=.*#id=${GDRIVE} -> ${TRANS}\"#" "${EBUILD}"
 ebuild "${EBUILD}" manifest
