@@ -1,0 +1,22 @@
+#!/bin/bash
+set -e
+if [ "$UID" -ne 0 ]; then
+exec sudo $0 $@ || ( echo "You must be root"; exit 1 )
+fi
+cd /tmp
+rm -f ips-v4
+wget https://www.cloudflare.com/ips-v4
+wget https://www.cloudflare.com/ips-v6
+nft flush map inet main cloudflare4-map
+for x in `cat ips-v4`; do
+# nft add element inet main cloudflare4 "{$x}";
+nft add element inet main cloudflare4-map "{${x} . 443 : accept}"
+ done
+#nft list set inet main cloudflare4
+nft list map inet main cloudflare4-map
+for x in `cat ips-v4` `cat ips-v6`; do
+	echo "set_real_ip_from ${x};" >>/tmp/cloudflare.conf
+done
+echo "real_ip_header CF-Connecting-IP;" >>/tmp/cloudflare.conf
+mv -f /tmp/cloudflare.conf /etc/nginx/
+systemctl reload nginx
