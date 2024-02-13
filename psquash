@@ -81,6 +81,7 @@ fi
 #rc-service -S nfs start
 #cp "${EIXDIR}"/portage.eix "${PORTDIR}"
 set +u
-if [ ! -z "${EMAIL} ]; then
+if [ ! -z "${EMAIL}" ]; then
 	/usr/local/bin/postsync.sh "${EMAIL}"
 fi
+sudo -u kyle pkgcheck cache -ur phoenix591
