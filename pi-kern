@@ -1,0 +1,29 @@
+#!/bin/bash
+KERNTRY="/boot/kernel_my2712.img"
+KERNREG="/boot/kernel_2712.img"
+if [ "${UID}" != 0 ]; then
+	exec sudo $0 $@
+fi
+if [ ! -f /var/tmp/version ] && [ -z "${1}" ]; then
+# manual prereboot
+	cp /proc/version /var/tmp/
+	echo "Rebooting to update kernel"
+	reboot "0 tryboot"
+fi
+if [ ! -z "${1}" ]; then
+	if [ -f /var/tmp/version ]; then
+		echo "Version file exists.. checking.."
+		if ! diff /proc/version /var/tmp/version >/dev/null ; then
+			echo "New version booted!"
+			cp ${KERNTRY} ${KERNREG}
+			rm /var/tmp/version
+			exit 0
+		fi
+	# failure
+	echo "New kernel fails to boot"
+	rm /var/tmp/version
+	exit -1
+	fi
+	echo "No Update"
+	exit 0
+fi
