@@ -5,6 +5,10 @@ if [ "${UID}" != 0 ]; then
 	exec sudo $0 $@
 fi
 if [ ! -f /var/tmp/version ] && [ -z "${1}" ]; then
+	if  diff "${KERNREG}" "${KERNTRY}"; then
+		echo "No kernel update"
+		exit 0
+	fi
 # manual prereboot
 	cp /proc/version /var/tmp/
 	echo "Rebooting to update kernel"
