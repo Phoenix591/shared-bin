@@ -1,6 +1,6 @@
 #!/bin/bash
 if [ -z "${CHOST}" ]; then
-	export $(awk '/^CHOST/ && gsub("\"","")' /etc/portage/make.conf)
+	export CHOST="$(portageq envvar CHOST)"
 fi
 if [ -z "${CHOST}" ]; then
 	echo "Failed to get CHOST!"
