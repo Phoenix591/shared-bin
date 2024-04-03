@@ -2,7 +2,7 @@
 #dont double compress git compressed stuff
 export GIT='-action uncompressed@subpathname(*/.git/objects/pack)'
 #lz4
-export COMPMETHOD="-comp xz -all-root"
+export COMPMETHOD="-comp zstd -all-root"
 export PORTDIR="/usr/portage"
 #export EIXDIR="/var/cache/eix/"
 export EIXDIR="/var/cache/distfiles"
