@@ -1,0 +1,42 @@
+#!/bin/bash
+BATSYS="/sys/devices/platform/soc/soc:rpi_rtc/rtc/rtc0/battery_voltage"
+LOWV="275"
+HIGHV="300"
+CHGSYS="/sys/devices/platform/soc/soc:rpi_rtc/rtc/rtc0/charging_voltage"
+CFGF="/boot/config.txt /boot/tryboot.txt"
+DTP="dtparam=rtc_bbat_vchg=3000000"
+getbatv() { 
+	cut -c1-3 "${BATSYS}" 
+} 
+chgon() {
+	sed -i "s/#${DTP}/${DTP}/" ${CFGF}
+	sleep 30
+	systemctl reboot
+}
+chgoff() {
+	sed -i "s/${DTP}/#${DTP}/" ${CFGF}
+	sleep 30
+	systemctl reboot
+}
+if [ "${UID}" -ne 0 ]; then
+	exec sudo $0 $@
+fi
+if [ "$(getbatv)" -le "${LOWV}" ]; then 
+	#ENABLE CHARGE, reboot 11
+	 echo "Low rtc battery, rebooting to enable charging"
+	 chgon
+elif [ "$(getbatv)" -ge "${HIGHV}" ]; then 
+	if [ $(cat "${CHGSYS}") -ne 0 ]; then
+		#stop charge, reboot
+		echo "Rtc battery charged, rebooting to stop"
+		chgoff
+	else
+	echo "Battery high charge but not charging"
+	fi
+else
+	echo "Battery between high and low level"
+	echo -n "voltage: "
+	getbatv
+	echo -n "Charge voltage: "
+	cut -c1-3 "${CHGSYS}"
+fi
