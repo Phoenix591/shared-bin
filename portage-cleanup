@@ -1,5 +1,5 @@
 #!/bin/bash
 find /var/log/portage -name '*.log' -mtime +10 -print -delete
 cp /var/cache/distfiles/portage.eix /tmp/
-eclean-dist
+FEATURES="-distcc" eclean-dist
 cp /tmp/portage.eix /var/cache/distfiles/
