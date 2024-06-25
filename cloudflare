@@ -11,6 +11,7 @@ nft flush map inet main cloudflare4-map
 for x in `cat ips-v4`; do
 # nft add element inet main cloudflare4 "{$x}";
 nft add element inet main cloudflare4-map "{${x} . 443 : accept}"
+nft add element inet main cloudflare4-map "{${x} . 80 : accept}"
  done
 #nft list set inet main cloudflare4
 nft list map inet main cloudflare4-map
