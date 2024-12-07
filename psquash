@@ -7,6 +7,14 @@ export PORTDIR="/usr/portage"
 #export EIXDIR="/var/cache/eix/"
 export EIXDIR="/var/cache/distfiles"
 EMAIL="${1}"
+if ! mountpoint "${PORTDIR}"; then
+	echo "Portage git not mounted! Aborting!"
+	exit -1
+fi
+while pgrep emerge >/dev/null; do
+	echo "Emerge running. Waiting..."
+	pidwait emerge
+done
 if [ "$UID" -ne 0 ]; then
 	exec sudo "${0}" "${@}"
 fi
@@ -85,3 +93,5 @@ if [ ! -z "${EMAIL}" ]; then
 	/usr/local/bin/postsync.sh "${EMAIL}"
 fi
 sudo -u kyle pkgcheck cache -ur phoenix591
+sudo -u kyle bash -c "cd ~/guru && git pull --rebase"
+sudo -u kyle pkgcheck cache -ur guru
