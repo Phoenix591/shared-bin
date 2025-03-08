@@ -93,5 +93,5 @@ if [ ! -z "${EMAIL}" ]; then
 	/usr/local/bin/postsync.sh "${EMAIL}"
 fi
 sudo -u kyle pkgcheck cache -ur phoenix591
-sudo -u kyle bash -c "cd ~/guru && git pull --rebase"
+sudo -u kyle bash -c "cd ~/guru && git fetch && git reset --hard origin/dev"
 sudo -u kyle pkgcheck cache -ur guru
