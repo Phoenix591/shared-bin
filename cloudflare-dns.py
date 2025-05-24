@@ -34,12 +34,14 @@ def main():
         myconfig = config[section]
         zone_name = myconfig["zone_name"]
         cf = Cloudflare(api_token=myconfig["token"])
-
+        try:
+            ttl = int(myconfig["ttl"])
+        except KeyError:
+            ttl = 1  # Fallback to auto
         try:
             zone_id = myconfig["zone_id"]
         except KeyError:
             print("zone_id not specified, querying the api")
-            params = {"name": zone_name}
             search = cf.zones.list(name=zone_name)
             zone_id = search.result[0].id
         doip6 = myconfig.getboolean("ipv6")
@@ -112,6 +114,7 @@ def main():
                 type=mrecord["type"],
                 proxied=mrecord["proxied"],
                 content=mrecord["content"],
+                ttl=ttl,
             )
             print(r)
     exit(0)
