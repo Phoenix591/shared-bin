@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if eix -iq dev-lang/rust-bin; then # more than one rust installed
+	set -e
+	emerge -1 --quiet-build @rust-rebuild # rebuild all rust packages
+	emerge --prune dev-lang/rust-bin # remove unneeded old rust
+fi
