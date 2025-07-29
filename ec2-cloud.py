@@ -20,14 +20,28 @@ config.read(configfile)
 # prox-domains = @ bar ( any subdomains you want proxied )
 
 
-def getdns():
+def getdns(image):
+    describe_images_cmd = [
+        "aws", "ec2", "describe-images",
+        "--filters", f"Name=name,Values=*{image}*",
+        "--query", "Images[].ImageId",
+        "--output", "text"
+    ]
+    try:
+        ami_ids = subprocess.check_output(describe_images_cmd, text=True).strip()
+    except subprocess.CalledProcessError as e:
+        print(f"Error running describe-images: {e}")
+        ami_ids = ""
+    if not ami_ids:
+        sys.exit("No matching images found!")    
     dname = subprocess.run(
         [
             "aws",
             "ec2",
             "describe-instances",
+            "--filters", "Name=instance-state-name,Values=running", f"Name=image-id,Values={ami_ids}",
             "--query",
-            "Reservations[0].Instances[0].PublicDnsName",
+            "Reservations[].Instances[].PublicDnsName",
             "--output",
             "text",
         ],
@@ -38,7 +52,8 @@ def getdns():
 
 
 def main():
-    dname = getdns()
+    image = "openssh"
+    dname = getdns(image)
     if dname is None or dname == "":
       sys.exit("No instance found!")
     for section in config.sections():
