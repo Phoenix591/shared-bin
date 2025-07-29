@@ -2,6 +2,7 @@
 
 import subprocess
 import configparser
+import sys
 from os import path
 from cloudflare import Cloudflare
 
@@ -38,6 +39,8 @@ def getdns():
 
 def main():
     dname = getdns()
+    if dname is None or dname == "":
+      sys.exit("No instance found!")
     for section in config.sections():
         myconfig = config[section]
         zone_name = myconfig["zone_name"]
